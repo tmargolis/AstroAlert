@@ -183,10 +183,19 @@ class ConditionEvaluator {
             println("===========================")
 
             val jsonResponse = JSONObject(response)
-            val candidates = jsonResponse.getJSONArray("candidates")
-            val content = candidates.getJSONObject(0).getJSONObject("content")
-            val parts = content.getJSONArray("parts")
-            val textContent = parts.getJSONObject(0).getString("text")
+            val candidates = jsonResponse.optJSONArray("candidates")
+                ?: throw Exception("Invalid API response: missing candidates")
+            if (candidates.length() == 0) {
+                throw Exception("Invalid API response: empty candidates")
+            }
+            val content = candidates.getJSONObject(0).optJSONObject("content")
+                ?: throw Exception("Invalid API response: missing content")
+            val parts = content.optJSONArray("parts")
+                ?: throw Exception("Invalid API response: missing parts")
+            if (parts.length() == 0) {
+                throw Exception("Invalid API response: empty parts")
+            }
+            val textContent = parts.getJSONObject(0).optString("text", "")
 
             println("=== EXTRACTED TEXT ===")
             println(textContent)
@@ -202,13 +211,13 @@ class ConditionEvaluator {
             val analysis = JSONObject(cleanJson)
 
             ObservingConditions(
-                isGood = analysis.getBoolean("isGood"),
-                cloudCover = analysis.getDouble("avgCloudCover"),
-                seeing = analysis.getDouble("avgSeeing"),
-                transparency = analysis.getDouble("avgTransparency"),
+                isGood = analysis.optBoolean("isGood", false),
+                cloudCover = analysis.optDouble("avgCloudCover", 50.0),
+                seeing = analysis.optDouble("avgSeeing", 2.0),
+                transparency = analysis.optDouble("avgTransparency", 15.0),
                 moonIllumination = null,
                 moonAltitude = null,
-                message = analysis.getString("description")
+                message = analysis.optString("description", "Conditions analyzed")
             )
 
         } catch (e: Exception) {

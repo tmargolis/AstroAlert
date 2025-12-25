@@ -117,7 +117,7 @@ class MainActivity : AppCompatActivity() {
             try {
                 statusLog.append("📍 ${location.name}\n")
                 updateStatus(statusLog.toString())
-                Thread.sleep(200)
+                kotlinx.coroutines.delay(200)
 
                 // Get sunrise/sunset, forecast, and sky data (your existing code)
                 val sunTimesResult = repository.getSunTimes(location.latitude, location.longitude)
@@ -146,7 +146,12 @@ class MainActivity : AppCompatActivity() {
                     continue
                 }
 
-                val forecast = forecastResult.getOrNull()!!
+                val forecast = forecastResult.getOrNull()
+                if (forecast == null) {
+                    statusLog.append("  ⚠️ Forecast data unavailable\n\n")
+                    updateStatus(statusLog.toString())
+                    continue
+                }
                 val skyResult = if (MOCK_MODE) {
                     Result.success(MockDataProvider.getMockSkyData())
                 } else {
@@ -335,8 +340,7 @@ class MainActivity : AppCompatActivity() {
     private fun calculateTransitTime(ra: Double, longitude: Double, currentTime: Calendar): Calendar {
         // RA is in hours (0-24)
         // Transit occurs when Local Sidereal Time (LST) = RA
-
-        val longitude = -87.6298 // Chicago longitude (negative = west)
+        // longitude parameter is used directly (negative = west)
 
         // Get current date/time in UTC
         val utcTime = Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"))
